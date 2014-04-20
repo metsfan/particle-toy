@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ParticleToy</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="title_activity_home">Home</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_edit_effect">EditEffectActivity</string>
+    <string name="title_activity_view_effect">ViewEffectActivity</string>
+    <string name="title_activity_effect_renderer">EffectRendererActivity</string>
+
+</resources>

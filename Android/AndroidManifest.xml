@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.aeskreis.particletoy" >
+
+    <uses-sdk
+        android:maxSdkVersion="19"
+        android:minSdkVersion="11"
+        android:targetSdkVersion="19" />
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name="com.aeskreis.particletoy.activity.HomeActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/app_name"
+            android:theme="@style/FullscreenTheme" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.aeskreis.particletoy.activity.EditEffectActivity"
+            android:label="@string/title_activity_edit_effect" >
+        </activity>
+        <activity
+            android:name="com.aeskreis.particletoy.activity.ViewEffectActivity"
+            android:label="@string/title_activity_view_effect" >
+        </activity>
+        <activity
+            android:name="com.aeskreis.particletoy.activity.EffectRendererActivity"
+            android:label="@string/title_activity_effect_renderer" >
+        </activity>
+    </application>
+
+</manifest>
