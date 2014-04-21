@@ -12,7 +12,9 @@ namespace ptoy
 {
     void Particle::RegisterScriptObject(asIScriptEngine *engine)
     {
-        engine->RegisterObjectType("Particle", sizeof(Particle), asOBJ_VALUE | asOBJ_POD);
+        const char *className = "particle";
+        
+        engine->RegisterObjectType("className", sizeof(Particle), asOBJ_VALUE | asOBJ_POD);
         
         engine->RegisterObjectProperty("Particle", "vec3 position", asOFFSET(Particle, mPosition));
         engine->RegisterObjectProperty("Particle", "vec4 color", asOFFSET(Particle, mColor));

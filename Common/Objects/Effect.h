@@ -49,7 +49,7 @@ namespace ptoy
         
         asIScriptModule *mScriptModule;
         
-        CScriptArray *mParticles;
+        std::vector<Particle> mParticles;
         
         citymaps::IShader *mVertexShader;
         citymaps::IShader *mFragmentShader;

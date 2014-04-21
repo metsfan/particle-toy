@@ -184,7 +184,7 @@ namespace ptoy
         
         mScriptModule = mScriptEngine->GetModule(kScriptModuleName);
         
-        asIScriptFunction *function = mScriptModule->GetFunctionByDecl("array<Particle> initializeParticles(int)");
+        asIScriptFunction *function = mScriptModule->GetFunctionByDecl("array<particle> initializeParticles(int)");
 
         asIScriptContext *context = mScriptEngine->CreateContext();
         status = context->Prepare(function);
@@ -193,8 +193,10 @@ namespace ptoy
         
         status = context->Execute();
         
-        mParticles = reinterpret_cast<CScriptArray *>(context->GetReturnObject());
-        mParticles->AddRef();
+        CScriptArray *particles = reinterpret_cast<CScriptArray *>(context->GetReturnObject());
+        for (int i = 0; i < particles->GetSize(); i++) {
+            mParticles.push_back(*(Particle *)particles->At(i));
+        }
         
         context->Release();
         
