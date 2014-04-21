@@ -13,7 +13,8 @@ import com.citymaps.citymapsengine.WindowAndroid;
  */
 public class EffectRendererView extends LinearLayout {
 
-    private EffectRendererWindow mWindow;
+    private EffectRendererWindow msWindow;
+
     private Effect mEffect;
 
     public EffectRendererView(Context context) {
@@ -31,13 +32,17 @@ public class EffectRendererView extends LinearLayout {
     @Override
     protected void onFinishInflate()
     {
-        mWindow = new EffectRendererWindow(this.getContext());
-        this.addView(mWindow);
+        if (msWindow == null) {
+            // Only ever build one window, and just keep reusing it
+            msWindow = new EffectRendererWindow(this.getContext());
+        }
+
+        this.addView(msWindow);
     }
 
     public void setEffect(Effect effect) {
         mEffect = effect;
 
-        mWindow.setEffect(effect);
+        msWindow.setEffect(effect);
     }
 }

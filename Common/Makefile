@@ -3,7 +3,7 @@
 # Makefile for citymapsengine
 
 #BUILD_TARGET = Debug
-BUILD_TARGET	= Release
+#BUILD_TARGET	= Release
 
 ######################
 # Commands
@@ -73,8 +73,8 @@ ENGINE_LIB_FILE := $(LOCAL_PATH)/$(BUILD_TARGET)/$(EXEC_FILE)
 # Compiler Variables
 #######################
 
-CC	:= arm-linux-androideabi-g++
-CCPP	:= arm-linux-androideabi-g++
+CC	:= arm-linux-androideabi-gcc-4.7
+CCPP	:= arm-linux-androideabi-gcc-4.7
 
 
 
@@ -91,26 +91,13 @@ INCDIRS	:= -I$(LOCAL_PATH) \
 -I$(CM_LIB_DIR)/CitymapsEngine/Lib/xz/src/liblzma/api/ \
 -I$(CM_LIB_DIR)/CitymapsEngine/Lib/rapidjson/ \
 -I$(CM_LIB_DIR)/CitymapsEngine/Lib/openssl/include/ \
--I$(NDK_SYSROOT)/usr/include \
--I$(NDK_CPP_ROOT)/include 
+-I$(NDK_SYSROOT)/usr/include
 
-LIBS	:= -lpng-android \
--ljpegturbo-android \
--lfreetype-android \
--lPocoNet-android \
--lPocoFoundation-android  \
--lPocoUtil-android \
--lPocoCrypto-android \
--llzma-android \
--larchive-android \
--lssl-android \
--lcrypto-android \
+LIBS	:= -lMapEngine \
 -langelscript-android \
--lMapEngine \
 -lz \
 -lGLESv2 \
 -lstdc++ \
--lgnustl_static \
 -landroid \
 -llog \
 -lm \
@@ -118,9 +105,7 @@ LIBS	:= -lpng-android \
 
 LIBDIRS	:= -L$(LOCAL_PATH)/Lib \
 -L$(CM_LIB_DIR)/CitymapsEngine/Lib/ \
--L$(CM_ENGINE_LIB_DIR) \
--L$(NDK_SYSROOT)/usr/lib \
--L$(NDK_CPP_ROOT)/libs/armeabi
+-L$(CM_ENGINE_LIB_DIR)
 
 LDFLAGS	:= -fPIC -shared --sysroot=$(NDK_SYSROOT)
 
@@ -183,12 +168,14 @@ $(BUILD_TARGET)/$(EXEC_FILE): $(OBJS)
 	$(CCPP) $(LDFLAGS) $(LIBDIRS) -o ../$@ $(OBJS) $(LIBS);
 
 copy:
+	$(ECHO) "Copying config assets"; \
+	cp $(CONFIG_ASSET_PATH)/* $(ANDROID_ASSET_PATH); \
 	$(ECHO) "Copying lib"; \
 	cp $(BUILD_TARGET)/$(EXEC_FILE) $(ANDROID_LIB_PATH)$(EXEC_FILE);
 
 clean:
 	$(ECHO) "Removing all .o files"; \
-	find ./$(BUILD_TARGET) -name "*.o" -not -path "*/Lib/*" -print0 | xargs -0 rm -r; \
+	find ./$(BUILD_TARGET) -name "*.o" -print0 | xargs -0 rm -r; \
 	$(ECHO) "Removing all .d files"; \
     find . -name "*.d" -not -path "*/Lib/*" -print0 | xargs -0 rm -r \
 	

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ShaderConfig>
+    <Shaders></Shaders>
+    <ShaderPrograms>
+        <ShaderProgram name="particles">
+            <Shaders></Shaders>
+            <InputLayout>
+                <InputElement name="a_position" size="3" offset="0" />
+                <InputElement name="a_color" size="4" offset="12" />
+                <InputElement name="a_velocity" size="3" offset="28" />
+                <InputElement name="a_size" size="1" offset="40" />
+                <InputElement name="a_lifetime" size="1" offset="44" />
+            </InputLayout>
+        </ShaderProgram>
+    </ShaderPrograms>
+</ShaderConfig>

@@ -10,13 +10,25 @@
 
 #include "Globals.h"
 
+#include "Lib/angelscript/angelscript.h"
+
 namespace ptoy
 {
     class Particle
     {
     public:
-        Particle();
-        ~Particle();
+        Particle()
+        {
+        }
+        
+        ~Particle()
+        {
+        }
+        
+        static void RegisterScriptObject(asIScriptEngine *engine);
+        
+        float GetSize() { return mSize; }
+        const glm::vec3& GetPosition() { return mPosition; }
         
     private:
         glm::vec3 mPosition;
