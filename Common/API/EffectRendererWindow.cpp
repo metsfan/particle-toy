@@ -20,16 +20,16 @@
 
 extern "C"
 {
-    JNIEXPORT jlong JNICALL Java_com_aeskreis_particletoy_view_EffectRendererWindow_nativeInitialize(JNIEnv * env, jobject obj, jlong appPtr);
+    JNIEXPORT jlong JNICALL Java_com_aeskreis_particletoy_view_EffectRendererWindow_nativeInitialize(JNIEnv * env, jobject obj, jlong appPtr, jint width, jint height);
     JNIEXPORT void JNICALL Java_com_aeskreis_particletoy_view_EffectRendererWindow_nativeEnable(JNIEnv * env, jobject obj, jlong effectPtr);
     JNIEXPORT jboolean JNICALL Java_com_aeskreis_particletoy_view_EffectRendererWindow_nativeCompile(JNIEnv * env, jobject obj, jlong appPtr, jlong effectPtr, jobject effectJObj);
     JNIEXPORT void JNICALL Java_com_aeskreis_particletoy_view_EffectRendererWindow_nativeRun(JNIEnv * env, jobject obj, jlong appPtr, jlong effectPtr);
 };
 
-JNIEXPORT jlong JNICALL Java_com_aeskreis_particletoy_view_EffectRendererWindow_nativeInitialize(JNIEnv * env, jobject obj, jlong appPtr)
+JNIEXPORT jlong JNICALL Java_com_aeskreis_particletoy_view_EffectRendererWindow_nativeInitialize(JNIEnv * env, jobject obj, jlong appPtr, jint width, jint height)
 {
     std::shared_ptr<citymaps::IApplication> *app = reinterpret_cast<std::shared_ptr<citymaps::IApplication> *>(appPtr);
-    std::shared_ptr<ptoy::Effect> *effectPtr = new std::shared_ptr<ptoy::Effect>(new ptoy::Effect(*app));
+    std::shared_ptr<ptoy::Effect> *effectPtr = new std::shared_ptr<ptoy::Effect>(new ptoy::Effect(*app, width, height));
     
     citymaps::Logger::Log("Initialized: %lld", effectPtr);
     
@@ -55,9 +55,9 @@ JNIEXPORT jboolean JNICALL Java_com_aeskreis_particletoy_view_EffectRendererWind
 
 JNIEXPORT void JNICALL Java_com_aeskreis_particletoy_view_EffectRendererWindow_nativeRun(JNIEnv * env, jobject obj, jlong appPtr, jlong effectPtr)
 {
-    //ptoy::Effect *effect = reinterpret_cast<ptoy::Effect *>(effectPtr);
-    //std::shared_ptr<citymaps::IApplication> *app = reinterpret_cast<std::shared_ptr<citymaps::IApplication> *>(appPtr);
+    ptoy::Effect *effect = reinterpret_cast<ptoy::Effect *>(effectPtr);
+    std::shared_ptr<citymaps::IApplication> *app = reinterpret_cast<std::shared_ptr<citymaps::IApplication> *>(appPtr);
     
-    //effect->Run(*app);
+    effect->Run(*app);
 }
 

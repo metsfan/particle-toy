@@ -14,7 +14,7 @@
 
 namespace ptoy
 {
-    class Particle
+    struct Particle
     {
     public:
         Particle()
@@ -25,17 +25,18 @@ namespace ptoy
         {
         }
         
+        void Update(float elapsed);
+        
         static void RegisterScriptObject(asIScriptEngine *engine);
         
         float GetSize() { return mSize; }
         const glm::vec3& GetPosition() { return mPosition; }
         
-    private:
         glm::vec3 mPosition;
-        float mSize;
         glm::vec4 mColor;
         glm::vec3 mVelocity;
-        uint32_t mLifetime;
+        float mSize;
+        float mLifetime;
     };
 };
 

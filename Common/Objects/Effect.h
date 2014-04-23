@@ -16,9 +16,8 @@
 #include <CitymapsEngine/Core/Application.h>
 #include <CitymapsEngine/Core/Graphics/GraphicsDevice.h>
 #include <CitymapsEngine/Core/Util/Platform/Android/JavaObject.h>
-#include <CitymapsEngine/Core/Graphics/Shader.h>
-#include <CitymapsEngine/Core/Graphics/ShaderProgram.h>
-#include <CitymapsEngine/Core/Graphics/VertexBuffer.h>
+#include <CitymapsEngine/Core/Graphics/Shape/MeshShape.h>
+#include <CitymapsEngine/Core/Graphics/Camera/PerspectiveCamera.h>
 
 namespace ptoy
 {
@@ -27,7 +26,7 @@ namespace ptoy
                     public citymaps::Validatable
     {
     public:
-        Effect(std::shared_ptr<citymaps::IApplication> app);
+        Effect(std::shared_ptr<citymaps::IApplication> app, int width, int height);
         ~Effect();
         
         void Enable();
@@ -48,7 +47,12 @@ namespace ptoy
         std::string mScriptFile;
         
         asIScriptModule *mScriptModule;
+        asIScriptContext *mScriptContext;
         
+        asIObjectType *mParticleType;
+        asIScriptFunction *mParticleUpdateFunction;
+        
+        int mMaxParticles;
         std::vector<Particle> mParticles;
         
         citymaps::IShader *mVertexShader;
@@ -59,6 +63,14 @@ namespace ptoy
         
         asIScriptEngine *mScriptEngine;
         
+        citymaps::PerspectiveCamera *mCamera;
+        citymaps::MeshShape *mRenderShape;
+        
+        bool mRunning;
+        
         static void RegisterGLMTypes(asIScriptEngine *engine);
+        
+        template <typename T>
+        static void RegisterSTLVector(asIScriptEngine *engine, const std::string &type);
     };
 };

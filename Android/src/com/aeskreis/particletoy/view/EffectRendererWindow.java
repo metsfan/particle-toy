@@ -16,7 +16,7 @@ public class EffectRendererWindow extends WindowAndroid
 
     private static long msNativePtr = 0;
 
-    private native long nativeInitialize(long appPtr);
+    private native long nativeInitialize(long appPtr, int width, int height);
     private native long nativeEnable(long effectPtr);
     private native boolean nativeCompile(long appPtr, long effectPtr, Effect effect);
     private native void nativeRun(long appPtr, long effectPtr);
@@ -41,16 +41,21 @@ public class EffectRendererWindow extends WindowAndroid
     @Override
     protected void onEnable() {
         if (msNativePtr == 0) {
-            msNativePtr = this.nativeInitialize(mApplicationPtr);
+            msNativePtr = this.nativeInitialize(mApplicationPtr, this.getWidth(), this.getHeight());
         }
 
         this.nativeEnable(msNativePtr);
 
         if (msNativePtr != 0 && mApplicationPtr != 0) {
             if (this.nativeCompile(mApplicationPtr, msNativePtr, mEffect)) {
-                //nativeRun(mApplicationPtr, msNativePtr);
+                nativeRun(mApplicationPtr, msNativePtr);
             }
         }
+    }
+
+    @Override
+    public void onSizeChanged(int width, int height) {
+        super.onSizeChanged(width, height);
     }
 
     @Override

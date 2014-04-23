@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>11FC06B8-2A82-40C4-B036-368E3703501A</string>
+	<key>IDESourceControlProjectName</key>
+	<string>ParticleToyNative</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>ECB457CA-BF2F-4C59-8066-C5C20A7ED762</key>
+		<string>ssh://github.com/metsfan/particle-toy.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>Android/src/native/ParticleToyNative.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>ECB457CA-BF2F-4C59-8066-C5C20A7ED762</key>
+		<string>../../../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>ssh://github.com/metsfan/particle-toy.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>ECB457CA-BF2F-4C59-8066-C5C20A7ED762</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>ECB457CA-BF2F-4C59-8066-C5C20A7ED762</string>
+			<key>IDESourceControlWCCName</key>
+			<string>ParticleToy</string>
+		</dict>
+	</array>
+</dict>
+</plist>

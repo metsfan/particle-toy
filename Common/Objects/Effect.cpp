@@ -39,21 +39,27 @@ namespace ptoy
     
     static inline void MessageCallback(const asSMessageInfo *msg, void *param)
     {
-        //citymaps::Logger::Log("Script Error: %s, Type: %d, Row: %d, Col: %d, Section: %s", msg->message, msg->row, msg->col, msg->section, msg->type);
-        citymaps::Logger::Log("Message callback called for some reason");
+        citymaps::Logger::Log("Script Error: %s, Type: %d, Row: %d, Col: %d, Section: %s", msg->message, msg->type, msg->row, msg->col, msg->section);
+        //citymaps::Logger::Log("Message callback called for some reason");
     }
     
     static const char *kScriptModuleName = "particles";
     
-    Effect::Effect(std::shared_ptr<citymaps::IApplication> app) :
+    Effect::Effect(std::shared_ptr<citymaps::IApplication> app, int width, int height) :
         mShaderProgram(nullptr),
         mVertexShader(nullptr),
         mFragmentShader(nullptr),
         mShaderProgramBuilt(false),
         mApp(app),
-        mScriptModule(NULL)
+        mScriptModule(NULL),
+        mParticleType(NULL),
+        mParticleUpdateFunction(NULL),
+        mRenderShape(NULL),
+        mRunning(false),
+        mCamera(NULL)
     {
         mScriptEngine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
+        mScriptContext = mScriptEngine->CreateContext();
         
         RegisterStdString(mScriptEngine);
         RegisterScriptArray(mScriptEngine, true);
@@ -71,10 +77,14 @@ namespace ptoy
         
         status = mScriptEngine->SetMessageCallback(asFUNCTION(MessageCallback), this, asCALL_CDECL);
         citymaps::Logger::Log("Registered message callback: %d", status);
+        
+        this->OnResize(width, height);
     }
     
     Effect::~Effect()
     {
+        mScriptContext->Release();
+        mScriptEngine->Release();
     }
     
     void Effect::Enable()
@@ -87,16 +97,61 @@ namespace ptoy
     
     void Effect::OnResize(int width, int height)
     {
-        
+        float aspect = (float)width / (float)height;
+        citymaps::Logger::Log("Building Camera: %d, %d", width, height);
+        mCamera = new citymaps::PerspectiveCamera(aspect, glm::radians(45.0f), 1.0, 100.0, citymaps::Size(width, height));
     }
     
     void Effect::OnUpdate(citymaps::IApplication* application, int deltaMS)
     {
-        application->Invalidate();
+        if (mShaderProgramBuilt) {
+            float elapsed = deltaMS * 0.001;
+            
+            if (!mParticleType) {
+                mParticleType = mScriptEngine->GetObjectTypeByName("Particle");
+            }
+            
+            CScriptArray *scriptArray = CScriptArray::Create(mParticleType, mParticles.size());
+            
+            for (int i = 0; i < mParticles.size(); i++) {
+                Particle &particle = mParticles[i];
+                //particle.Update(elapsed);
+                scriptArray->InsertAt(i, &particle);
+            }
+            
+            if (!mParticleUpdateFunction) {
+                mParticleUpdateFunction = mScriptModule->GetFunctionByDecl("void updateParticles(array<Particle> &in particles)");
+                mParticleUpdateFunction->AddRef();
+            }
+            
+            mScriptContext->Prepare(mParticleUpdateFunction);
+            mScriptContext->SetArgObject(0, &scriptArray);
+            mScriptContext->Execute();
+            
+            scriptArray->Release();
+            
+            application->Invalidate();
+        }
     }
     
     void Effect::OnRender(citymaps::IApplication* application, int deltaMS)
     {
+        if (mShaderProgramBuilt && mCamera) {
+            citymaps::IGraphicsDevice *device = application->GetGraphicsDevice();
+            
+            if (!mRenderShape) {
+                mRenderShape = new citymaps::MeshShape(device, "particles");
+            }
+            
+            mRenderShape->UpdateData(&mParticles[0], sizeof(Particle) * mParticles.size(), mParticles.size());
+            
+            citymaps::RenderState state;
+            state.SetProjection(mCamera->GetProjectionMatrix());
+            state.PushTransform(mCamera->GetViewMatrix());
+            
+            mRenderShape->Draw(device, state, citymaps::PrimitiveTypePointList);
+        }
+        
     }
     
     void Effect::OnNetworkStatusChanged(citymaps::IApplication* application, citymaps::NetworkStatus status)
@@ -141,8 +196,6 @@ namespace ptoy
         /* Build shader program */
         //mVertexShader = device->CreateShader(vertexShaderFile.Data(), citymaps::ShaderTypeVertexShader);
         //mFragmentShader = device->CreateShader(fragmentShaderFile.Data(), citymaps::ShaderTypePixelShader);
-        mVertexShader = device->CreateShader("test_vert.glsl", citymaps::ShaderTypeVertexShader);
-        mFragmentShader = device->CreateShader("test_frag.glsl", citymaps::ShaderTypePixelShader);
         
         mShaderProgram = device->GetContext()->GetShaderProgram("particles");
         if (!mShaderProgram) {
@@ -150,7 +203,18 @@ namespace ptoy
             mApp->LoadEffectsConfig("pt_effects.xml");
             
             mShaderProgram = device->GetContext()->GetShaderProgram("particles");
+            
+            device->GetContext()->RegisterGlobalData("u_mvp");
         }
+        
+        int mvpIndex = device->GetContext()->GetGlobalDataIndex("u_mvp");
+        
+        mVertexShader = device->CreateShader("test_vert.glsl", citymaps::ShaderTypeVertexShader);
+        mVertexShader->AddGlobalData(mvpIndex, "u_mvp");
+        
+        mFragmentShader = device->CreateShader("test_frag.glsl", citymaps::ShaderTypePixelShader);
+        mFragmentShader->AddGlobalData(mvpIndex, "u_mvp");
+        
         
         citymaps::Logger::Log("Shader Program: %p", mShaderProgram);
         
@@ -184,32 +248,32 @@ namespace ptoy
         
         mScriptModule = mScriptEngine->GetModule(kScriptModuleName);
         
-        asIScriptFunction *function = mScriptModule->GetFunctionByDecl("array<particle> initializeParticles(int)");
-
-        asIScriptContext *context = mScriptEngine->CreateContext();
-        status = context->Prepare(function);
-
-        context->SetArgDWord(0, 10);
+        asIScriptFunction *function = mScriptModule->GetFunctionByDecl("int getMaxParticles()");
+        status = mScriptContext->Prepare(function);
+        mScriptContext->Execute();
+        mMaxParticles = mScriptContext->GetReturnDWord();
         
-        status = context->Execute();
+        function = mScriptModule->GetFunctionByDecl("array<Particle> initializeParticles(int)");
+        status = mScriptContext->Prepare(function);
+        mScriptContext->SetArgDWord(0, 10);
         
-        CScriptArray *particles = reinterpret_cast<CScriptArray *>(context->GetReturnObject());
+        status = mScriptContext->Execute();
+        
+        CScriptArray *particles = reinterpret_cast<CScriptArray *>(mScriptContext->GetReturnObject());
         for (int i = 0; i < particles->GetSize(); i++) {
             mParticles.push_back(*(Particle *)particles->At(i));
         }
         
-        context->Release();
-        
         this->Invalidate();
         
-        mShaderProgramBuilt = false;
+        mShaderProgramBuilt = true;
         
         return true;
     }
     
     void Effect::Run(std::shared_ptr<citymaps::IApplication> app)
     {
-        
+        mRunning = true;
     }
     
     void Effect::RegisterGLMTypes(asIScriptEngine *engine)
@@ -218,13 +282,16 @@ namespace ptoy
         engine->RegisterObjectProperty("vec3", "float x", asOFFSET(glm::vec3, x));
         engine->RegisterObjectProperty("vec3", "float y", asOFFSET(glm::vec3, y));
         engine->RegisterObjectProperty("vec3", "float z", asOFFSET(glm::vec3, z));
+        engine->RegisterObjectMethod("vec3", "float& opIndex(int)", asMETHODPR(glm::vec3, operator[], (int), float&), asCALL_THISCALL);
         
         engine->RegisterObjectType("vec4", sizeof(glm::vec4), asOBJ_VALUE | asOBJ_POD);
         engine->RegisterObjectProperty("vec4", "float x", asOFFSET(glm::vec4, x));
         engine->RegisterObjectProperty("vec4", "float y", asOFFSET(glm::vec4, y));
         engine->RegisterObjectProperty("vec4", "float z", asOFFSET(glm::vec4, z));
         engine->RegisterObjectProperty("vec4", "float w", asOFFSET(glm::vec4, w));
+        engine->RegisterObjectMethod("vec4", "float& opIndex(int)", asMETHODPR(glm::vec4, operator[], (int), float&), asCALL_THISCALL);
         
-        //engine->RegisterObjectType("mat4", sizeof(glm::mat4), asOBJ_VALUE | asOBJ_POD);
+        engine->RegisterObjectType("mat4", sizeof(glm::mat4), asOBJ_VALUE | asOBJ_POD);
+        engine->RegisterObjectMethod("mat4", "vec4& opIndex(int)", asMETHODPR(glm::mat4, operator[], (int), glm::vec4&), asCALL_THISCALL);
     }
 }
