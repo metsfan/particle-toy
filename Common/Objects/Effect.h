@@ -63,10 +63,12 @@ namespace ptoy
         
         asIScriptEngine *mScriptEngine;
         
-        citymaps::PerspectiveCamera *mCamera;
+        std::unique_ptr<citymaps::PerspectiveCamera> mCamera;
         citymaps::MeshShape *mRenderShape;
         
         bool mRunning;
+        
+        void CopyParticleToBuffer(std::vector<ParticleVertex> &verts, const Particle &particle, int &c);
         
         static void RegisterGLMTypes(asIScriptEngine *engine);
         

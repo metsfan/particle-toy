@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <ShaderConfig>
-    <Shaders></Shaders>
+    <Shaders>
+        <Shader name="placeholder_vert" filename="placeholder_vert.glsl" type="vertex" >
+            <GlobalData name="u_mvp" />
+        </Shader>
+        <Shader name="placeholder_frag" filename="placeholder_frag.glsl" type="pixel" >
+        </Shader>
+    </Shaders>
     <ShaderPrograms>
         <ShaderProgram name="particles">
-            <Shaders></Shaders>
+            <Shaders>
+                <Shader name="placeholder_vert" />
+                <Shader name="placeholder_frag" />
+            </Shaders>
             <InputLayout>
                 <InputElement name="a_position" size="3" offset="0" />
                 <InputElement name="a_color" size="4" offset="12" />

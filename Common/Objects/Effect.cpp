@@ -23,6 +23,8 @@
 
 namespace ptoy
 {
+    static int kRandMax = RAND_MAX;
+    
     static inline void PrintExceptionInfo(asIScriptContext *ctx)
     {
         asIScriptEngine *engine = ctx->GetEngine();
@@ -45,6 +47,16 @@ namespace ptoy
     
     static const char *kScriptModuleName = "particles";
     
+    static inline int randomInt(int min, int max)
+    {
+        return (rand() % (max - min)) + min;
+    }
+    
+    static inline float randomZeroToOne()
+    {
+        return (float)rand() / (float)RAND_MAX;
+    }
+    
     Effect::Effect(std::shared_ptr<citymaps::IApplication> app, int width, int height) :
         mShaderProgram(nullptr),
         mVertexShader(nullptr),
@@ -56,7 +68,7 @@ namespace ptoy
         mParticleUpdateFunction(NULL),
         mRenderShape(NULL),
         mRunning(false),
-        mCamera(NULL)
+        mCamera(nullptr)
     {
         mScriptEngine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
         mScriptContext = mScriptEngine->CreateContext();
@@ -66,6 +78,12 @@ namespace ptoy
         RegisterScriptDictionary(mScriptEngine);
         RegisterScriptMath(mScriptEngine);
         
+        auto random = [](float min, float max) -> float {
+            
+        };
+        
+        mScriptEngine->RegisterGlobalFunction("int randomInt(int, int)", asFUNCTION(randomInt), asCALL_CDECL);
+        mScriptEngine->RegisterGlobalFunction("float randomZeroToOne()", asFUNCTION(randomZeroToOne), asCALL_CDECL);
         
         RegisterGLMTypes(mScriptEngine);
         Particle::RegisterScriptObject(mScriptEngine);
@@ -99,7 +117,7 @@ namespace ptoy
     {
         float aspect = (float)width / (float)height;
         citymaps::Logger::Log("Building Camera: %d, %d", width, height);
-        mCamera = new citymaps::PerspectiveCamera(aspect, glm::radians(45.0f), 1.0, 100.0, citymaps::Size(width, height));
+        mCamera = std::unique_ptr<citymaps::PerspectiveCamera>(new citymaps::PerspectiveCamera(aspect, 45.0f, 1.0, 1000.0, citymaps::Size(width, height)));
     }
     
     void Effect::OnUpdate(citymaps::IApplication* application, int deltaMS)
@@ -120,13 +138,12 @@ namespace ptoy
             }
             
             if (!mParticleUpdateFunction) {
-                mParticleUpdateFunction = mScriptModule->GetFunctionByDecl("void updateParticles(array<Particle> &in particles)");
-                mParticleUpdateFunction->AddRef();
+                mParticleUpdateFunction = mScriptModule->GetFunctionByDecl("void updateParticles(array<Particle> &particles)");
             }
             
-            mScriptContext->Prepare(mParticleUpdateFunction);
-            mScriptContext->SetArgObject(0, &scriptArray);
-            mScriptContext->Execute();
+            //mScriptContext->Prepare(mParticleUpdateFunction);
+            //mScriptContext->SetArgObject(0, &scriptArray);
+            //mScriptContext->Execute();
             
             scriptArray->Release();
             
@@ -143,14 +160,79 @@ namespace ptoy
                 mRenderShape = new citymaps::MeshShape(device, "particles");
             }
             
-            mRenderShape->UpdateData(&mParticles[0], sizeof(Particle) * mParticles.size(), mParticles.size());
+            std::vector<ParticleVertex> verts;
+            verts.resize(mParticles.size() * 6);
+            
+            citymaps::Logger::Log("Rendering %i particles", mParticles.size());
+            
+            int c = 0;
+            for (const Particle &particle : mParticles) {
+                this->CopyParticleToBuffer(verts, particle, c);
+            }
+            
+            mRenderShape->UpdateData(&verts[0], sizeof(ParticleVertex) * verts.size(), verts.size());
+            
+            mCamera->MoveTo(citymaps::Vector3(0, 0, 100));
+            
+            mCamera->Update();
             
             citymaps::RenderState state;
             state.SetProjection(mCamera->GetProjectionMatrix());
             state.PushTransform(mCamera->GetViewMatrix());
             
-            mRenderShape->Draw(device, state, citymaps::PrimitiveTypePointList);
+            mRenderShape->Draw(device, state, citymaps::PrimitiveTypeTriangleList);
         }
+        
+    }
+    
+    void Effect::CopyParticleToBuffer(std::vector<ParticleVertex> &verts, const Particle &particle, int &c)
+    {
+        int c2 = c;
+        
+        for (int i = 0; i < 6; i++) {
+            verts[c2].position[0] = particle.mPosition.x;
+            verts[c2].position[1] = particle.mPosition.y;
+            verts[c2].position[2] = particle.mPosition.z;
+            
+            verts[c2].color[0] = particle.mColor.x;
+            verts[c2].color[1] = particle.mColor.y;
+            verts[c2].color[2] = particle.mColor.z;
+            verts[c2].color[3] = particle.mColor.w;
+            
+            verts[c2].velocity[0] = particle.mVelocity.x;
+            verts[c2].velocity[1] = particle.mVelocity.y;
+            verts[c2].velocity[2] = particle.mVelocity.z;
+            
+            verts[c2].size = particle.mSize;
+            
+            verts[c2].lifetime = particle.mLifetime;
+            
+            c2++;
+        }
+        
+        verts[c].position[0] = particle.mPosition.x - (verts[c].size * 0.5);
+        verts[c].position[1] = particle.mPosition.y - (verts[c].size * 0.5);
+        c++;
+        
+        verts[c].position[0] = particle.mPosition.x + (verts[c].size * 0.5);
+        verts[c].position[1] = particle.mPosition.y - (verts[c].size * 0.5);
+        c++;
+        
+        verts[c].position[0] = particle.mPosition.x + (verts[c].size * 0.5);
+        verts[c].position[1] = particle.mPosition.y + (verts[c].size * 0.5);
+        c++;
+        
+        verts[c].position[0] = particle.mPosition.x - (verts[c].size * 0.5);
+        verts[c].position[1] = particle.mPosition.y - (verts[c].size * 0.5);
+        c++;
+        
+        verts[c].position[0] = particle.mPosition.x - (verts[c].size * 0.5);
+        verts[c].position[1] = particle.mPosition.y + (verts[c].size * 0.5);
+        c++;
+        
+        verts[c].position[0] = particle.mPosition.x + (verts[c].size * 0.5);
+        verts[c].position[1] = particle.mPosition.y + (verts[c].size * 0.5);
+        c++;
         
     }
     
@@ -203,25 +285,28 @@ namespace ptoy
             mApp->LoadEffectsConfig("pt_effects.xml");
             
             mShaderProgram = device->GetContext()->GetShaderProgram("particles");
-            
-            device->GetContext()->RegisterGlobalData("u_mvp");
         }
         
-        int mvpIndex = device->GetContext()->GetGlobalDataIndex("u_mvp");
-        
-        mVertexShader = device->CreateShader("test_vert.glsl", citymaps::ShaderTypeVertexShader);
-        mVertexShader->AddGlobalData(mvpIndex, "u_mvp");
-        
-        mFragmentShader = device->CreateShader("test_frag.glsl", citymaps::ShaderTypePixelShader);
-        mFragmentShader->AddGlobalData(mvpIndex, "u_mvp");
-        
-        
-        citymaps::Logger::Log("Shader Program: %p", mShaderProgram);
-        
-        mShaderProgram->SetShader(mVertexShader);
-        mShaderProgram->SetShader(mFragmentShader);
-        
-        mShaderProgram->Build();
+//        int mvpIndex = device->GetContext()->GetGlobalDataIndex("u_mvp");
+//        
+//        citymaps::File vertexShaderData(mVertexShaderFile);
+//        vertexShaderData.Load();
+//        mVertexShader = device->CreateShader(vertexShaderData.Data(), citymaps::ShaderTypeVertexShader);
+//        mVertexShader->AddGlobalData(mvpIndex, "u_mvp");
+//        
+//        
+//        citymaps::File fragmentShaderData(mFragmentShaderFile);
+//        fragmentShaderData.Load();
+//        mFragmentShader = device->CreateShader(fragmentShaderData.Data(), citymaps::ShaderTypePixelShader);
+//        //mFragmentShader->AddGlobalData(mvpIndex, "u_mvp");
+//        
+//        
+//        citymaps::Logger::Log("Shader Program: %p", mShaderProgram);
+//        
+//        mShaderProgram->SetShader(mVertexShader);
+//        mShaderProgram->SetShader(mFragmentShader);
+//        
+//        mShaderProgram->Build();
         
         /* Build script */
         
@@ -255,11 +340,13 @@ namespace ptoy
         
         function = mScriptModule->GetFunctionByDecl("array<Particle> initializeParticles(int)");
         status = mScriptContext->Prepare(function);
-        mScriptContext->SetArgDWord(0, 10);
+        mScriptContext->SetArgDWord(0, mMaxParticles);
         
         status = mScriptContext->Execute();
         
         CScriptArray *particles = reinterpret_cast<CScriptArray *>(mScriptContext->GetReturnObject());
+        
+        mParticles.clear();
         for (int i = 0; i < particles->GetSize(); i++) {
             mParticles.push_back(*(Particle *)particles->At(i));
         }
@@ -282,6 +369,12 @@ namespace ptoy
         engine->RegisterObjectProperty("vec3", "float x", asOFFSET(glm::vec3, x));
         engine->RegisterObjectProperty("vec3", "float y", asOFFSET(glm::vec3, y));
         engine->RegisterObjectProperty("vec3", "float z", asOFFSET(glm::vec3, z));
+        engine->RegisterObjectProperty("vec3", "float r", asOFFSET(glm::vec3, r));
+        engine->RegisterObjectProperty("vec3", "float g", asOFFSET(glm::vec3, g));
+        engine->RegisterObjectProperty("vec3", "float b", asOFFSET(glm::vec3, b));
+        engine->RegisterObjectProperty("vec3", "float s", asOFFSET(glm::vec3, s));
+        engine->RegisterObjectProperty("vec3", "float t", asOFFSET(glm::vec3, t));
+        engine->RegisterObjectProperty("vec3", "float p", asOFFSET(glm::vec3, p));
         engine->RegisterObjectMethod("vec3", "float& opIndex(int)", asMETHODPR(glm::vec3, operator[], (int), float&), asCALL_THISCALL);
         
         engine->RegisterObjectType("vec4", sizeof(glm::vec4), asOBJ_VALUE | asOBJ_POD);
@@ -289,7 +382,18 @@ namespace ptoy
         engine->RegisterObjectProperty("vec4", "float y", asOFFSET(glm::vec4, y));
         engine->RegisterObjectProperty("vec4", "float z", asOFFSET(glm::vec4, z));
         engine->RegisterObjectProperty("vec4", "float w", asOFFSET(glm::vec4, w));
+        engine->RegisterObjectProperty("vec4", "float r", asOFFSET(glm::vec4, r));
+        engine->RegisterObjectProperty("vec4", "float g", asOFFSET(glm::vec4, g));
+        engine->RegisterObjectProperty("vec4", "float b", asOFFSET(glm::vec4, b));
+        engine->RegisterObjectProperty("vec4", "float a", asOFFSET(glm::vec4, a));
+        engine->RegisterObjectProperty("vec4", "float s", asOFFSET(glm::vec4, s));
+        engine->RegisterObjectProperty("vec4", "float t", asOFFSET(glm::vec4, t));
+        engine->RegisterObjectProperty("vec4", "float p", asOFFSET(glm::vec4, p));
+        engine->RegisterObjectProperty("vec4", "float q", asOFFSET(glm::vec4, q));
         engine->RegisterObjectMethod("vec4", "float& opIndex(int)", asMETHODPR(glm::vec4, operator[], (int), float&), asCALL_THISCALL);
+        
+        engine->RegisterObjectType("mat3", sizeof(glm::mat3), asOBJ_VALUE | asOBJ_POD);
+        engine->RegisterObjectMethod("mat3", "vec3& opIndex(int)", asMETHODPR(glm::mat3, operator[], (int), glm::vec3&), asCALL_THISCALL);
         
         engine->RegisterObjectType("mat4", sizeof(glm::mat4), asOBJ_VALUE | asOBJ_POD);
         engine->RegisterObjectMethod("mat4", "vec4& opIndex(int)", asMETHODPR(glm::mat4, operator[], (int), glm::vec4&), asCALL_THISCALL);

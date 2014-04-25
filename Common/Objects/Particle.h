@@ -14,6 +14,15 @@
 
 namespace ptoy
 {
+    struct ParticleVertex
+    {
+        float position[3];
+        float color[4];
+        float velocity[3];
+        float size;
+        float lifetime;
+    };
+    
     struct Particle
     {
     public:

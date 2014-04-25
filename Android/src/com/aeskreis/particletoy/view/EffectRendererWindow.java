@@ -1,6 +1,7 @@
 package com.aeskreis.particletoy.view;
 
 import android.content.Context;
+import android.graphics.Color;
 import com.aeskreis.particletoy.model.Effect;
 import com.citymaps.citymapsengine.WindowAndroid;
 
@@ -44,6 +45,7 @@ public class EffectRendererWindow extends WindowAndroid
             msNativePtr = this.nativeInitialize(mApplicationPtr, this.getWidth(), this.getHeight());
         }
 
+        this.setBackgroundColor(Color.rgb(230, 230, 230));
         this.nativeEnable(msNativePtr);
 
         if (msNativePtr != 0 && mApplicationPtr != 0) {

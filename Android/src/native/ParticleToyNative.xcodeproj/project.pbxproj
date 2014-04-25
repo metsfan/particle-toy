@@ -24,8 +24,6 @@
 		66BED764190393F000A2F9EC /* Effect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Effect.h; sourceTree = "<group>"; };
 		66BED768190416D200A2F9EC /* pt_shaders.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = pt_shaders.xml; sourceTree = "<group>"; };
 		66BED769190416E800A2F9EC /* pt_effects.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = pt_effects.xml; sourceTree = "<group>"; };
-		66BED76A19045EA400A2F9EC /* test_vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test_vert.glsl; sourceTree = "<group>"; };
-		66BED76B19045EAD00A2F9EC /* test_frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test_frag.glsl; sourceTree = "<group>"; };
 		66BED76C19045EB500A2F9EC /* test_script.as */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = test_script.as; sourceTree = "<group>"; };
 		66BED76E190494CD00A2F9EC /* angelscript.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = angelscript.h; sourceTree = "<group>"; };
 		66BED770190494CD00A2F9EC /* aswrappedcall.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = aswrappedcall.h; sourceTree = "<group>"; };
@@ -80,6 +78,8 @@
 		66BED7B0190494CD00A2F9EC /* weakref.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = weakref.cpp; sourceTree = "<group>"; };
 		66BED7B1190494CD00A2F9EC /* weakref.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = weakref.d; sourceTree = "<group>"; };
 		66BED7B2190494CD00A2F9EC /* weakref.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = weakref.h; sourceTree = "<group>"; };
+		66E17495190A27840009938B /* placeholder_vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = placeholder_vert.glsl; sourceTree = "<group>"; };
+		66E17496190A278D0009938B /* placeholder_frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = placeholder_frag.glsl; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,9 +140,9 @@
 			children = (
 				66BED768190416D200A2F9EC /* pt_shaders.xml */,
 				66BED769190416E800A2F9EC /* pt_effects.xml */,
-				66BED76A19045EA400A2F9EC /* test_vert.glsl */,
-				66BED76B19045EAD00A2F9EC /* test_frag.glsl */,
 				66BED76C19045EB500A2F9EC /* test_script.as */,
+				66E17495190A27840009938B /* placeholder_vert.glsl */,
+				66E17496190A278D0009938B /* placeholder_frag.glsl */,
 			);
 			name = Config;
 			path = ../../../Common/Config;

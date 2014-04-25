@@ -13,6 +13,9 @@ void main()
     v_color = a_color;
     
     gl_PointSize = a_size;
+
+    vec3 newpos = a_position;
+    newpos.x = 10;
     
-    gl_Position = u_mvp * vec4(a_position, 1.0);
+    gl_Position = u_mvp * vec4(newpos, 1.0);
 }
