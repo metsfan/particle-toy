@@ -34,7 +34,7 @@ namespace ptoy
         {
         }
         
-        void Update(float elapsed);
+        void Update(float elapsed, const glm::vec3 &gravity);
         
         static void RegisterScriptObject(asIScriptEngine *engine);
         
@@ -44,6 +44,7 @@ namespace ptoy
         glm::vec3 mPosition;
         glm::vec4 mColor;
         glm::vec3 mVelocity;
+        glm::vec3 mAcceleration;
         float mSize;
         float mLifetime;
     };

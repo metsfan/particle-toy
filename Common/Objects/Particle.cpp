@@ -20,11 +20,14 @@ namespace ptoy
         engine->RegisterObjectProperty(className, "vec4 color", asOFFSET(Particle, mColor));
         engine->RegisterObjectProperty(className, "float size", asOFFSET(Particle, mSize));
         engine->RegisterObjectProperty(className, "vec3 velocity", asOFFSET(Particle, mVelocity));
+        engine->RegisterObjectProperty(className, "vec3 acceleration", asOFFSET(Particle, mAcceleration));
         engine->RegisterObjectProperty(className, "float lifetime", asOFFSET(Particle, mLifetime));
     }
     
-    void Particle::Update(float elapsed)
+    void Particle::Update(float elapsed, const glm::vec3 &gravity)
     {
-        mPosition += mPosition * (mVelocity * elapsed);
+        mAcceleration += gravity * elapsed;
+        mVelocity += mAcceleration * elapsed;
+        mPosition += mVelocity * elapsed;
     }
 }

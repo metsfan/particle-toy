@@ -53,7 +53,9 @@ namespace ptoy
         asIScriptFunction *mParticleUpdateFunction;
         
         int mMaxParticles;
-        std::vector<Particle> mParticles;
+        CScriptArray *mParticles;
+        std::vector<ParticleVertex> mVerts;
+        glm::vec3 mGravity;
         
         citymaps::IShader *mVertexShader;
         citymaps::IShader *mFragmentShader;
@@ -67,12 +69,12 @@ namespace ptoy
         citymaps::MeshShape *mRenderShape;
         
         bool mRunning;
+        int mFPSCounter;
+        int mFPSTime;
         
+        void InitializeScriptEngine();
         void CopyParticleToBuffer(std::vector<ParticleVertex> &verts, const Particle &particle, int &c);
         
         static void RegisterGLMTypes(asIScriptEngine *engine);
-        
-        template <typename T>
-        static void RegisterSTLVector(asIScriptEngine *engine, const std::string &type);
     };
 };

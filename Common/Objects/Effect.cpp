@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Adam. All rights reserved.
 //
 
+#include <new>
+
 #include "Objects/Effect.h"
 #include "Lib/angelscript/scriptstdstring/scriptstdstring.h"
 #include "Lib/angelscript/scriptdictionary/scriptdictionary.h"
@@ -14,6 +16,9 @@
 
 #include <CitymapsEngine/Core/Disk/File.h>
 #include <CitymapsEngine/Core/Disk/Resource.h>
+#include <CitymapsEngine/Core/Graphics/Effect.h>
+#include <CitymapsEngine/Core/Graphics/Technique.h>
+#include <CitymapsEngine/Core/Graphics/Pass.h>
 
 #ifdef __APPLE__
 #include <JavaVM/jni.h>
@@ -57,6 +62,18 @@ namespace ptoy
         return (float)rand() / (float)RAND_MAX;
     }
     
+    template <typename T>
+    static inline void construct(T *memory)
+    {
+        new (memory) T();
+    }
+    
+    template <typename T>
+    static inline void destruct(T *memory)
+    {
+        memory->~T();
+    }
+    
     Effect::Effect(std::shared_ptr<citymaps::IApplication> app, int width, int height) :
         mShaderProgram(nullptr),
         mVertexShader(nullptr),
@@ -68,7 +85,23 @@ namespace ptoy
         mParticleUpdateFunction(NULL),
         mRenderShape(NULL),
         mRunning(false),
-        mCamera(nullptr)
+        mCamera(nullptr),
+        mFPSCounter(0),
+        mFPSTime(0),
+        mParticles(NULL)
+    {
+        this->InitializeScriptEngine();
+        
+        this->OnResize(width, height);
+    }
+    
+    Effect::~Effect()
+    {
+        mScriptContext->Release();
+        mScriptEngine->Release();
+    }
+    
+    void Effect::InitializeScriptEngine()
     {
         mScriptEngine = asCreateScriptEngine(ANGELSCRIPT_VERSION);
         mScriptContext = mScriptEngine->CreateContext();
@@ -77,10 +110,6 @@ namespace ptoy
         RegisterScriptArray(mScriptEngine, true);
         RegisterScriptDictionary(mScriptEngine);
         RegisterScriptMath(mScriptEngine);
-        
-        auto random = [](float min, float max) -> float {
-            
-        };
         
         mScriptEngine->RegisterGlobalFunction("int randomInt(int, int)", asFUNCTION(randomInt), asCALL_CDECL);
         mScriptEngine->RegisterGlobalFunction("float randomZeroToOne()", asFUNCTION(randomZeroToOne), asCALL_CDECL);
@@ -95,14 +124,6 @@ namespace ptoy
         
         status = mScriptEngine->SetMessageCallback(asFUNCTION(MessageCallback), this, asCALL_CDECL);
         citymaps::Logger::Log("Registered message callback: %d", status);
-        
-        this->OnResize(width, height);
-    }
-    
-    Effect::~Effect()
-    {
-        mScriptContext->Release();
-        mScriptEngine->Release();
     }
     
     void Effect::Enable()
@@ -125,27 +146,34 @@ namespace ptoy
         if (mShaderProgramBuilt) {
             float elapsed = deltaMS * 0.001;
             
+            mFPSTime += deltaMS;
+            if (mFPSTime >= 1000) {
+                mFPSTime -= 1000;
+                
+                citymaps::Logger::Log("FPS: %i", mFPSCounter);
+                mFPSCounter = 0;
+            } else {
+                mFPSCounter++;
+            }
+            
             if (!mParticleType) {
                 mParticleType = mScriptEngine->GetObjectTypeByName("Particle");
             }
             
-            CScriptArray *scriptArray = CScriptArray::Create(mParticleType, mParticles.size());
-            
-            for (int i = 0; i < mParticles.size(); i++) {
-                Particle &particle = mParticles[i];
-                //particle.Update(elapsed);
-                scriptArray->InsertAt(i, &particle);
+            for (int i = 0; i < mParticles->GetSize(); i++) {
+                Particle *particle = reinterpret_cast<Particle *>(mParticles->At(i));
+                particle->Update(elapsed, mGravity);
             }
             
             if (!mParticleUpdateFunction) {
                 mParticleUpdateFunction = mScriptModule->GetFunctionByDecl("void updateParticles(array<Particle> &particles)");
             }
             
-            //mScriptContext->Prepare(mParticleUpdateFunction);
-            //mScriptContext->SetArgObject(0, &scriptArray);
-            //mScriptContext->Execute();
+            mScriptContext->Prepare(mParticleUpdateFunction);
+            mScriptContext->SetArgObject(0, mParticles);
+            mScriptContext->Execute();
             
-            scriptArray->Release();
+            //scriptArray->Release();
             
             application->Invalidate();
         }
@@ -161,13 +189,15 @@ namespace ptoy
             }
             
             std::vector<ParticleVertex> verts;
-            verts.resize(mParticles.size() * 6);
-            
-            citymaps::Logger::Log("Rendering %i particles", mParticles.size());
-            
+            verts.resize(mParticles->GetSize() * 6);
+
             int c = 0;
-            for (const Particle &particle : mParticles) {
+            /*for (const Particle &particle : mParticles) {
                 this->CopyParticleToBuffer(verts, particle, c);
+            }*/
+            for (int i = 0; i < mParticles->GetSize(); i++) {
+                Particle *next = reinterpret_cast<Particle *>(mParticles->At(i));
+                this->CopyParticleToBuffer(verts, *next, c);
             }
             
             mRenderShape->UpdateData(&verts[0], sizeof(ParticleVertex) * verts.size(), verts.size());
@@ -287,31 +317,29 @@ namespace ptoy
             mShaderProgram = device->GetContext()->GetShaderProgram("particles");
         }
         
-//        int mvpIndex = device->GetContext()->GetGlobalDataIndex("u_mvp");
-//        
-//        citymaps::File vertexShaderData(mVertexShaderFile);
-//        vertexShaderData.Load();
-//        mVertexShader = device->CreateShader(vertexShaderData.Data(), citymaps::ShaderTypeVertexShader);
-//        mVertexShader->AddGlobalData(mvpIndex, "u_mvp");
-//        
-//        
-//        citymaps::File fragmentShaderData(mFragmentShaderFile);
-//        fragmentShaderData.Load();
-//        mFragmentShader = device->CreateShader(fragmentShaderData.Data(), citymaps::ShaderTypePixelShader);
-//        //mFragmentShader->AddGlobalData(mvpIndex, "u_mvp");
-//        
-//        
-//        citymaps::Logger::Log("Shader Program: %p", mShaderProgram);
-//        
-//        mShaderProgram->SetShader(mVertexShader);
-//        mShaderProgram->SetShader(mFragmentShader);
-//        
-//        mShaderProgram->Build();
+        int mvpIndex = device->GetContext()->GetGlobalDataIndex("u_mvp");
+        
+        citymaps::File vertexShaderData(mVertexShaderFile);
+        vertexShaderData.Load();
+        mVertexShader = device->CreateShader(vertexShaderData.Data(), citymaps::ShaderTypeVertexShader);
+        mVertexShader->AddGlobalData(mvpIndex, "u_mvp");
+        
+        
+        citymaps::File fragmentShaderData(mFragmentShaderFile);
+        fragmentShaderData.Load();
+        mFragmentShader = device->CreateShader(fragmentShaderData.Data(), citymaps::ShaderTypePixelShader);
+
+        mShaderProgram->SetShader(mVertexShader);
+        mShaderProgram->SetShader(mFragmentShader);
+
+        mShaderProgram->Build();
         
         /* Build script */
         
         if (mScriptModule) {
-            mScriptEngine->DiscardModule(kScriptModuleName);
+            mScriptEngine->Release();
+            
+            this->InitializeScriptEngine();
         }
         
         CScriptBuilder builder;
@@ -338,18 +366,28 @@ namespace ptoy
         mScriptContext->Execute();
         mMaxParticles = mScriptContext->GetReturnDWord();
         
+        function = mScriptModule->GetFunctionByDecl("vec3 getGravity()");
+        status = mScriptContext->Prepare(function);
+        mScriptContext->Execute();
+        mGravity = *(reinterpret_cast<glm::vec3 *>(mScriptContext->GetReturnObject()));
+        
         function = mScriptModule->GetFunctionByDecl("array<Particle> initializeParticles(int)");
         status = mScriptContext->Prepare(function);
         mScriptContext->SetArgDWord(0, mMaxParticles);
         
         status = mScriptContext->Execute();
         
-        CScriptArray *particles = reinterpret_cast<CScriptArray *>(mScriptContext->GetReturnObject());
+        if (mParticles) {
+            mParticles->Release();
+        }
         
-        mParticles.clear();
+        mParticles = reinterpret_cast<CScriptArray *>(mScriptContext->GetReturnObject());
+        
+        mParticles->AddRef();
+        /*mParticles.clear();
         for (int i = 0; i < particles->GetSize(); i++) {
             mParticles.push_back(*(Particle *)particles->At(i));
-        }
+        }*/
         
         this->Invalidate();
         
